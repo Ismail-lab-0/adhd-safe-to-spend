@@ -673,12 +673,15 @@ App.data = {
         '<h1>Debt</h1>' +
         '<p class="sub">A clear payoff order instead of guessing which one to tackle.</p>' +
         '<div class="card">' +
+        '  <div class="field"><label for="debtName">Debt name</label>' +
+        '    <input id="debtName" type="text" placeholder="e.g. Credit card"></div>' +
         '  <div class="row">' +
-        '    <input id="debtName" type="text" placeholder="e.g. Credit card" aria-label="Debt name">' +
-        '    <input id="debtBalance" type="number" step="0.01" placeholder="Balance" aria-label="Balance" style="max-width:120px">' +
-        '    <input id="debtRate" type="number" step="0.1" placeholder="Rate %" aria-label="Interest rate" style="max-width:90px">' +
-        '    <button id="addDebtBtn" type="button">Add</button>' +
+        '    <div class="field" style="flex:1"><label for="debtBalance">Balance</label>' +
+        '      <input id="debtBalance" type="number" step="0.01" placeholder="0.00"></div>' +
+        '    <div class="field" style="flex:1"><label for="debtRate">Rate %</label>' +
+        '      <input id="debtRate" type="number" step="0.1" placeholder="0"></div>' +
         '  </div>' +
+        '  <button id="addDebtBtn" type="button">Add debt</button>' +
         '  <div class="field" style="margin-top:var(--space-3)"><label for="strategySel">Payoff strategy</label>' +
         '    <select id="strategySel">' +
         '      <option value="snowball"' + (strategy === 'snowball' ? ' selected' : '') + '>Snowball — smallest balance first</option>' +
