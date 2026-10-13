@@ -134,6 +134,11 @@ p.sub { margin: 0 0 var(--space-5); color: var(--color-muted); font-size: var(--
 
 .card { background: var(--color-card); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-4); box-shadow: var(--shadow-sm); }
 .row { display: flex; gap: var(--space-2); }
+/* A flex item's default min-width:auto clamps it to its content's min-content size,
+   regardless of any min-width:0 set deeper inside (e.g. on a nested input) — the
+   same gotcha .grid-2 > * already works around above. A .field wrapped in a .row
+   (e.g. side-by-side labeled inputs) needs the same reset on the .field itself. */
+.row > .field { min-width: 0; }
 
 input[type=text], input[type=number], textarea {
   flex: 1; min-width: 0; font: inherit; padding: 10px 12px;
