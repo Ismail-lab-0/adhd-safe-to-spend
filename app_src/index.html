@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<!--STYLES-->
+</head>
+<body>
+<div id="app">
+  <header id="app-header">
+    <strong id="app-title">__TITLE__</strong>
+    <div id="app-controls">
+      <button id="themeToggle" type="button" class="ghost" aria-label="Toggle dark mode">&#9788;</button>
+      <button id="exportBtn" type="button" class="ghost">Export backup</button>
+      <button id="importBtn" type="button" class="ghost">Import backup</button>
+      <input id="importFile" type="file" accept="application/json" hidden>
+    </div>
+  </header>
+  <div id="app-body">
+    <nav id="view-nav" aria-label="Main navigation"></nav>
+    <main id="view-root" data-active-view=""></main>
+  </div>
+  <p id="demo-banner" hidden>Demo mode — some data and actions are limited. The full version is in your purchase.</p>
+</div>
+<!--SCRIPTS-->
+</body>
+</html>

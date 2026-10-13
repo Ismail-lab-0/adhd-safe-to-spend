@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADHD Budget Planner</title>
+<style>
+/* Design tokens — single source of truth for colors/spacing/radius/shadow/fonts.
+   tools/app_template.html (the "simple" architecture) hand-syncs its own inline
+   :root block to these same names/values (see tests/test_app.py's token-drift
+   test) since it must stay single-file and can't @import this file. Change a
+   value here AND there, never one without the other. */
+/* Breakpoints (documented here, not as custom properties — media queries need
+   literal px): 480 = small phone, 680 = nav collapses to a top bar (see
+   01_components.css), 960 = wide desktop (two-column dashboard/workspace layouts
+   via .grid-2, see 01_components.css). */
+:root {
+  /* ADHD Budget Planner palette: warm terracotta/plum, deliberately not the
+     teal/green "calm fintech" look used by HeyMorning/DVDNart/TheCalmLifeReset/
+     FinNestStudio (research.json's Design rationale) — contrast-verified below. */
+  --color-bg: #FBF6F1;
+  --color-ink: #3B3A36;
+  --color-accent: #D9714E;
+  --color-card: #fff;
+  --color-muted: #8a8378;
+  --color-border: #e6dcd0;
+  --color-danger: #B3434B;
+
+  /* Semantic feedback colors (banners, inline validation) — tinted background +
+     an ink-like text color, same pairing convention as --color-danger above. */
+  --color-success: #2F6B4F;
+  --color-success-bg: #E3F0E7;
+  --color-warning: #8A5A00;
+  --color-warning-bg: #FBF0D9;
+  --color-info: #2C5F8A;
+  --color-info-bg: #E4EEF5;
+  --color-error-bg: #F7E3E4;
+
+  /* Solid button-background colors. Deliberately FIXED — the same value in both
+     light and dark mode, unlike --color-accent/--color-danger above (which stay
+     theme-adaptive for foreground/decorative use: chart fills, icons, borders,
+     where lightening in dark mode is correct). A theme-adaptive color that gets
+     LIGHTER in dark mode is wrong for a solid button background carrying white
+     text — tests/test_app.py's contrast tests + validators/app_check.py's
+     check_color_contrast verify these two pairs hold >= 4.5:1 in both themes. */
+  --color-primary: #A8512E;
+  --color-on-primary: #fff;
+  --color-danger-strong: #B3434B;
+  --color-on-danger: #fff;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 1px 6px rgba(0, 0, 0, .06);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, .14);
+
+  /* Type scale. h1/h2/h3 below use these; .text-sm/.text-xs/.caption are utility
+     classes for secondary copy — see 01_components.css. */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+
+  /* Named after the same brand families tools/fonts/ ships (used in the guide
+     PDFs via tools/pdf_kit.py) — a browser with them installed renders on-brand;
+     everyone else falls back to a clean system stack. The TTFs themselves are
+     not embedded here (keeps the self-contained HTML small — see CLAUDE.md). */
+  --font-body: "Nunito Sans", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: "Quicksand", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+:root[data-theme="dark"] {
+  --color-bg: #231A22;
+  --color-ink: #ece7df;
+  --color-accent: #C98BA0;
+  --color-card: #2f2430;
+  --color-muted: #ab9fa8;
+  --color-border: #4a3a49;
+  --color-danger: #d97b82;
+
+  --color-success: #8FCBA8;
+  --color-success-bg: #1E3A2B;
+  --color-warning: #E8C067;
+  --color-warning-bg: #3A2F12;
+  --color-info: #8FC1E8;
+  --color-info-bg: #1C3246;
+  --color-error-bg: #3A1F21;
+
+  /* --color-primary/--color-on-primary/--color-danger-strong/--color-on-danger
+     intentionally NOT overridden here — see the base :root comment above. */
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font-body); font-size: var(--text-base); line-height: var(--leading-normal); background: var(--color-bg); color: var(--color-ink); }
+h1, h2, h3 { font-family: var(--font-heading); line-height: var(--leading-tight); margin: var(--space-2) 0 var(--space-1); }
+h1 { font-size: var(--text-2xl); }
+h2 { font-size: var(--text-xl); }
+h3 { font-size: var(--text-lg); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* Structural layout + reusable component classes. Shares every color/spacing/radius
+   token with tools/app_template.html's inline <style> (see 00_tokens.css's header) —
+   keep both in sync, verified by tests/test_app.py's token-drift/component tests. */
+#app-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
+#app-controls { display: flex; gap: var(--space-2); }
+#app-body { display: flex; min-height: calc(100vh - 56px); }
+#view-nav { display: flex; flex-direction: column; gap: var(--space-1); width: 180px; padding: var(--space-4) var(--space-2); border-right: 1px solid var(--color-border); flex-shrink: 0; }
+#view-nav button { text-align: left; background: transparent; border: 0; padding: var(--space-3) var(--space-3); border-radius: var(--radius-sm); font: inherit; color: var(--color-ink); cursor: pointer; }
+#view-nav button[aria-current="page"] { background: var(--color-card); font-weight: 600; }
+#view-root { flex: 1; padding: var(--space-5) var(--space-5) 60px; max-width: 760px; }
+/* h1/h2/h3 sizing comes from 00_tokens.css's type scale. */
+p.sub { margin: 0 0 var(--space-5); color: var(--color-muted); font-size: var(--text-sm); }
+
+.card { background: var(--color-card); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-4); box-shadow: var(--shadow-sm); }
+.row { display: flex; gap: var(--space-2); }
+
+input[type=text], input[type=number], textarea {
+  flex: 1; min-width: 0; font: inherit; padding: 10px 12px;
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-card); color: var(--color-ink);
+}
+
+/* background/color use the FIXED --color-primary/--color-danger-strong pair (see
+   00_tokens.css) — not --color-accent/--color-danger, whose dark-mode-lightened
+   values drop white-text contrast well below WCAG AA when used as a solid fill. */
+button { font: inherit; padding: 10px 14px; border: 0; border-radius: var(--radius-sm); background: var(--color-primary); color: var(--color-on-primary); cursor: pointer; }
+button.ghost { background: transparent; color: var(--color-ink); border: 1px solid var(--color-border); }
+button.danger { background: var(--color-danger-strong); color: var(--color-on-danger); }
+
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+ul { list-style: none; padding: 0; margin: var(--space-3) 0 0; }
+li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: 10px 0; border-top: 1px solid var(--color-border); }
+
+/* Uses the fixed --color-primary pair, same contrast reasoning as buttons above —
+   a persistent banner has the same white-text-on-solid-fill requirement. */
+#demo-banner { text-align: center; padding: var(--space-2); margin: 0; background: var(--color-primary); color: var(--color-on-primary); font-size: var(--text-sm); }
+#demo-banner[hidden] { display: none; }
+
+/* Empty-state: a single reusable pattern for "nothing here yet" sections. */
+.empty-state { text-align: center; padding: 40px var(--space-4); color: var(--color-muted); }
+.empty-state strong { display: block; color: var(--color-ink); margin-bottom: var(--space-1); }
+
+/* Toast/snackbar: transient feedback, dismissed by the caller via [hidden]. */
+.toast {
+  position: fixed; left: 50%; bottom: var(--space-4); transform: translateX(-50%);
+  background: var(--color-ink); color: var(--color-bg); padding: 10px var(--space-4);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); font-size: .9rem;
+}
+.toast[hidden] { display: none; }
+
+/* Banner/alert: persistent inline feedback (validation summaries, zone warnings),
+   distinct from the transient floating .toast above. One semantic variant class
+   required: success|warning|error|info. */
+.banner { display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-radius: var(--radius-sm); font-size: var(--text-sm); margin-bottom: var(--space-4); }
+.banner.success { background: var(--color-success-bg); color: var(--color-success); }
+.banner.warning { background: var(--color-warning-bg); color: var(--color-warning); }
+.banner.error { background: var(--color-error-bg); color: var(--color-danger); }
+.banner.info { background: var(--color-info-bg); color: var(--color-info); }
+
+/* Form field group: label + control + optional help text + error state. Wrap any
+   existing input/textarea/select in a .field; add .has-error plus a .field-error
+   element (role="alert" so screen readers announce it) when validation fails. */
+.field { margin-bottom: var(--space-4); }
+.field label { display: block; margin-bottom: 6px; font-weight: 600; font-size: var(--text-sm); }
+.field .help { display: block; margin-top: 4px; color: var(--color-muted); font-size: var(--text-xs); }
+.field.has-error input, .field.has-error textarea, .field.has-error select { border-color: var(--color-danger); }
+.field-error { display: block; margin-top: 4px; color: var(--color-danger); font-size: var(--text-xs); }
+select {
+  flex: 1; min-width: 0; font: inherit; padding: 10px 12px;
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-card); color: var(--color-ink);
+}
+
+/* Table: header row, row separators, a horizontal-scroll wrapper for narrow
+   screens so a wide table never breaks layout instead of silently clipping. */
+.table-scroll { overflow-x: auto; margin-bottom: var(--space-4); }
+table.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+table.table th { text-align: left; padding: var(--space-2) var(--space-3); color: var(--color-muted); font-weight: 600; border-bottom: 1px solid var(--color-border); }
+table.table td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); }
+table.table tbody tr:hover { background: var(--color-bg); }
+
+/* Tabs: role="tablist"/"tab"/"tabpanel" convention. Toggling is handled by
+   App.ui.initTabs(root) in main.js — this is presentation only. */
+.tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-4); }
+.tabs [role="tab"] { background: transparent; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: var(--space-2) var(--space-3); color: var(--color-muted); cursor: pointer; }
+.tabs [role="tab"][aria-selected="true"] { color: var(--color-ink); border-bottom-color: var(--color-primary); font-weight: 600; }
+[role="tabpanel"][hidden] { display: none; }
+
+/* Loading: a CSS-only spinner and a skeleton shimmer block. Both go static under
+   prefers-reduced-motion (see 00_tokens.css's global rule). */
+.spinner { width: 20px; height: 20px; border-radius: var(--radius-full); border: 2.5px solid var(--color-border); border-top-color: var(--color-primary); animation: spin 0.8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.skeleton { background: var(--color-border); border-radius: var(--radius-sm); animation: skeleton-pulse 1.4s ease-in-out infinite; }
+@keyframes skeleton-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+
+/* Modal: native <dialog> — no extra JS library needed for open/close/backdrop.
+   .modal-header/.modal-body/.modal-footer are an optional structural convention
+   for anything beyond a one-line confirm. */
+dialog.modal { border: 0; border-radius: var(--radius-lg); padding: var(--space-5); max-width: 420px; width: 90%; box-shadow: var(--shadow-md); background: var(--color-card); color: var(--color-ink); }
+dialog.modal::backdrop { background: rgba(0, 0, 0, .4); }
+.modal-header { font-family: var(--font-heading); font-size: var(--text-lg); font-weight: 600; margin-bottom: var(--space-3); }
+.modal-body { margin-bottom: var(--space-4); }
+.modal-footer { display: flex; justify-content: flex-end; gap: var(--space-2); }
+
+/* Accordion: native <details>/<summary> — Help/FAQ sections, no JS required. */
+details.accordion { border-bottom: 1px solid var(--color-border); padding: var(--space-3) 0; }
+details.accordion summary { cursor: pointer; font-weight: 600; }
+details.accordion[open] summary { color: var(--color-primary); }
+details.accordion .answer { margin-top: var(--space-2); color: var(--color-ink); }
+
+/* Layout utilities for dashboard/workspace views: .stack is the default vertical
+   flow (explicit for readability); .grid-2 goes two columns at >=680px. */
+.stack { display: flex; flex-direction: column; gap: var(--space-4); }
+.grid-2 { display: grid; grid-template-columns: 1fr; gap: var(--space-4); }
+/* Grid items default to min-width:auto (content-based), which lets a flex row's
+   children (e.g. .row inputs) force a grid cell wider than its track and overflow
+   at narrow viewports — min-width:0 lets the track's own width win instead. */
+.grid-2 > * { min-width: 0; }
+@media (min-width: 680px) {
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 680px) {
+  #app-body { flex-direction: column; }
+  #view-nav { flex-direction: row; width: auto; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--color-border); }
+  #view-root { max-width: none; padding: var(--space-4); }
+  .tabs { overflow-x: auto; }
+}
+
+</style>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#A8512E">
+</head>
+<body>
+<div id="app">
+  <header id="app-header">
+    <strong id="app-title">ADHD Budget Planner</strong>
+    <div id="app-controls">
+      <button id="themeToggle" type="button" class="ghost" aria-label="Toggle dark mode">&#9788;</button>
+      <button id="exportBtn" type="button" class="ghost">Export backup</button>
+      <button id="importBtn" type="button" class="ghost">Import backup</button>
+      <input id="importFile" type="file" accept="application/json" hidden>
+    </div>
+  </header>
+  <div id="app-body">
+    <nav id="view-nav" aria-label="Main navigation"></nav>
+    <main id="view-root" data-active-view=""></main>
+  </div>
+  <p id="demo-banner" hidden>Demo mode — some data and actions are limited. The full version is in your purchase.</p>
+</div>
+<script>
+window.APP_DEMO_MODE = false;
+
+/* Minimal hash router. Each module (app_src/modules/*.js) registers a view on
+ * App.views[id] = {navLabel, render(root)} and pushes id onto App.nav, in the order
+ * it should appear in the nav. render(root) MUST set root.dataset.activeView = id and
+ * replace root's content with that view's real markup (never just scroll to an anchor —
+ * validators/app_check.py's multi-view check clicks every nav item and asserts both
+ * data-active-view and the visible text actually change). */
+(function () {
+  window.App = window.App || { views: {}, nav: [] };
+
+  function show(id) {
+    var view = App.views[id];
+    if (!view) {
+      id = App.nav[0];
+      view = App.views[id];
+    }
+    if (!view) return;
+    view.render(document.getElementById('view-root'));
+    document.querySelectorAll('#view-nav [data-nav]').forEach(function (b) {
+      b.setAttribute('aria-current', b.dataset.nav === id ? 'page' : 'false');
+    });
+    if (location.hash !== '#' + id) location.hash = '#' + id;
+  }
+
+  function buildNav() {
+    var nav = document.getElementById('view-nav');
+    nav.innerHTML = '';
+    App.nav.forEach(function (id) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.nav = id;
+      b.textContent = App.views[id].navLabel;
+      b.addEventListener('click', function () { show(id); });
+      nav.appendChild(b);
+    });
+  }
+
+  window.addEventListener('hashchange', function () { show(location.hash.slice(1)); });
+  window.AppRouter = {
+    init: function () {
+      buildNav();
+      show(location.hash.slice(1) || App.nav[0]);
+    },
+  };
+})();
+
+
+/* Tiny inline-SVG chart helpers — no CDN chart library (would break the self-contained/
+ * no-network invariant). Replace or extend per product; keep charts reading real app
+ * state, never sample/placeholder numbers baked into the markup. */
+window.App = window.App || {};
+App.charts = {
+  bar: function (values, labels) {
+    var w = 560, h = 200, pad = 28, max = Math.max.apply(null, values.concat([1]));
+    var barW = (w - pad * 2) / values.length - 8;
+    var bars = values.map(function (v, i) {
+      var bh = Math.max(2, (v / max) * (h - pad * 2));
+      var x = pad + i * (barW + 8);
+      var y = h - pad - bh;
+      return '<rect x="' + x + '" y="' + y + '" width="' + barW + '" height="' + bh +
+        '" rx="3" fill="var(--color-accent)"></rect>' +
+        '<text x="' + (x + barW / 2) + '" y="' + (h - 8) + '" text-anchor="middle" font-size="10" fill="var(--color-ink)">' +
+        (labels ? labels[i] : i + 1) + '</text>';
+    }).join('');
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Bar chart">' + bars + '</svg>';
+  },
+};
+
+
+/* Shared data helpers used by multiple views (dashboard, bills, debt, savings).
+ * Defines App.data.* — no view registration here, just pure functions over the
+ * same App.store state every view reads/writes. Loaded before the view modules
+ * (filename order 01_ < 02_..07_) so App.data exists when they run. */
+window.App = window.App || { views: {}, nav: [] };
+
+App.data = {
+  /* A bill's "effective" amount for safe-to-spend purposes: an every-N-months
+   * bill with setAside=true is spread across its cadence (e.g. $372/6mo = $62/mo
+   * held back monthly); everything else counts at its full face amount. */
+  effectiveAmount: function (bill) {
+    if (bill.cadence === 'every_n_months' && bill.setAside && bill.everyNMonths > 0) {
+      return bill.amount / bill.everyNMonths;
+    }
+    return bill.amount;
+  },
+
+  unpaidBillsTotal: function (bills) {
+    return (bills || [])
+      .filter(function (b) { return !b.paid; })
+      .reduce(function (sum, b) { return sum + App.data.effectiveAmount(b); }, 0);
+  },
+
+  savingsReservedTotal: function (goals) {
+    return (goals || []).reduce(function (sum, g) { return sum + (g.saved || 0); }, 0);
+  },
+
+  safeToSpend: function () {
+    var balance = App.store.get('balance', 0);
+    var bills = App.store.get('bills', []);
+    var goals = App.store.get('savings', []);
+    return balance - App.data.unpaidBillsTotal(bills) - App.data.savingsReservedTotal(goals);
+  },
+
+  /* Advance a bill's dueDate (YYYY-MM-DD) to its next occurrence per cadence.
+   * one_off bills never advance — caller should treat them as done once paid. */
+  nextDueDate: function (bill) {
+    var d = new Date(bill.dueDate + 'T00:00:00');
+    if (isNaN(d.getTime())) return bill.dueDate;
+    switch (bill.cadence) {
+      case 'weekly': d.setDate(d.getDate() + 7); break;
+      case 'biweekly': d.setDate(d.getDate() + 14); break;
+      case 'monthly': d.setMonth(d.getMonth() + 1); break;
+      case 'every_n_months': d.setMonth(d.getMonth() + (bill.everyNMonths || 1)); break;
+      case 'one_off': default: return bill.dueDate;
+    }
+    return d.toISOString().slice(0, 10);
+  },
+
+  /* Debt payoff order: snowball = smallest balance first, avalanche = highest
+   * interest rate first. Returns a NEW sorted array; never mutates. */
+  debtPayoffOrder: function (debts, strategy) {
+    var list = (debts || []).slice();
+    if (strategy === 'avalanche') {
+      list.sort(function (a, b) { return (b.rate || 0) - (a.rate || 0); });
+    } else {
+      list.sort(function (a, b) { return (a.balance || 0) - (b.balance || 0); });
+    }
+    return list;
+  },
+
+  formatMoney: function (n) {
+    var symbol = App.store.get('currencySymbol', '$');
+    var v = isFinite(n) ? n : 0;
+    return symbol + v.toFixed(2);
+  },
+
+  escapeHtml: function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  },
+
+  uid: function () {
+    return 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  },
+};
+
+
+/* Today (dashboard) view: the one safe-to-spend number, an account-balance input
+ * (the one manual input the whole calc depends on — "type the balance from your
+ * banking app", same pattern every competitor uses, no bank connection), today's
+ * due/overdue bills at a glance, and an income entry log. */
+(function () {
+  window.App = window.App || { views: {}, nav: [] };
+  var d = App.data;
+
+  App.views.dashboard = {
+    navLabel: 'Today',
+    render: function (root) {
+      root.dataset.activeView = 'dashboard';
+      var balance = App.store.get('balance', 0);
+      var bills = App.store.get('bills', []);
+      var income = App.store.get('income', []);
+      var safe = d.safeToSpend();
+
+      var todayStr = new Date().toISOString().slice(0, 10);
+      var dueSoon = bills
+        .filter(function (b) { return !b.paid; })
+        .sort(function (a, b) { return a.dueDate < b.dueDate ? -1 : 1; })
+        .slice(0, 5);
+
+      var dueHtml = dueSoon.length
+        ? dueSoon.map(function (b) {
+            var overdue = b.dueDate < todayStr;
+            return '<li><span>' + d.escapeHtml(b.name) +
+              (overdue ? ' <span class="text-sm" style="color:var(--color-danger)">overdue</span>' : '') +
+              '</span><span>' + d.formatMoney(d.effectiveAmount(b)) + ' &middot; ' + b.dueDate + '</span></li>';
+          }).join('')
+        : '';
+
+      var incomeHtml = income.slice(-5).reverse().map(function (e) {
+        return '<li><span>' + d.escapeHtml(e.label) + ' &middot; ' + e.date + '</span>' +
+          '<span>' + d.formatMoney(e.amount) + '</span></li>';
+      }).join('');
+
+      root.innerHTML =
+        '<h1>Today</h1>' +
+        '<p class="sub">What\'s actually safe to spend, after bills and savings are already set aside.</p>' +
+        '<div class="card">' +
+        '  <div class="field" style="margin-bottom:var(--space-2)">' +
+        '    <label for="balanceInput">Account balance</label>' +
+        '    <input id="balanceInput" type="number" step="0.01" value="' + balance + '">' +
+        '    <span class="help">Type the balance from your banking app — this never connects to a bank.</span>' +
+        '  </div>' +
+        '  <h2 style="margin:var(--space-3) 0 0">Safe to spend today</h2>' +
+        '  <p style="font-family:var(--font-heading);font-size:2.25rem;margin:4px 0 0;' +
+        (safe < 0 ? 'color:var(--color-danger)' : 'color:var(--color-primary)') + '">' +
+        d.formatMoney(safe) + '</p>' +
+        '</div>' +
+        '<div class="grid-2">' +
+        '  <div class="card">' +
+        '    <h2>Due soon</h2>' +
+        (dueHtml ? '<ul>' + dueHtml + '</ul>' :
+          '<div class="empty-state"><strong>Nothing due</strong>Add a bill in the Bills tab.</div>') +
+        '  </div>' +
+        '  <div class="card">' +
+        '    <h2>Income</h2>' +
+        '    <div class="row">' +
+        '      <input id="incLabel" type="text" placeholder="e.g. Paycheck" aria-label="Income label">' +
+        '      <input id="incAmount" type="number" step="0.01" placeholder="Amount" aria-label="Income amount" style="max-width:110px">' +
+        '      <button id="addIncomeBtn" type="button">Add</button>' +
+        '    </div>' +
+        (incomeHtml ? '<ul>' + incomeHtml + '</ul>' :
+          '<div class="empty-state"><strong>No income logged yet</strong></div>') +
+        '  </div>' +
+        '</div>';
+
+      root.querySelector('#balanceInput').addEventListener('change', function (e) {
+        var v = parseFloat(e.target.value);
+        App.store.set('balance', isFinite(v) ? v : 0);
+        App.views.dashboard.render(root);
+      });
+
+      root.querySelector('#addIncomeBtn').addEventListener('click', function () {
+        var label = root.querySelector('#incLabel').value.trim();
+        var amount = parseFloat(root.querySelector('#incAmount').value);
+        if (!label || !isFinite(amount)) return;
+        income.push({ id: d.uid(), label: label, amount: amount, date: todayStr });
+        App.store.set('income', income);
+        App.store.set('balance', App.store.get('balance', 0) + amount);
+        App.views.dashboard.render(root);
+      });
+    },
+  };
+  App.nav.push('dashboard');
+})();
+
+
+/* Bills view — the "irregular/non-monthly bill cadences" essential feature (research:
+ * market_coverage=majority among observed app-tier competitors, so built as table
+ * stakes, not marketed as a differentiator). Supports weekly/biweekly/monthly/
+ * every-N-months/one-off, and for every-N-months, an optional "set aside monthly"
+ * toggle that spreads the cost (see App.data.effectiveAmount). */
+(function () {
+  window.App = window.App || { views: {}, nav: [] };
+  var d = App.data;
+  var DEMO_BILL_LIMIT = 3;
+
+  function cadenceLabel(bill) {
+    switch (bill.cadence) {
+      case 'weekly': return 'Every week';
+      case 'biweekly': return 'Every 2 weeks';
+      case 'monthly': return 'Every month';
+      case 'every_n_months': return 'Every ' + (bill.everyNMonths || 1) + ' months' +
+        (bill.setAside ? ' (set aside monthly)' : '');
+      case 'one_off': return 'One-off';
+      default: return bill.cadence;
+    }
+  }
+
+  App.views.bills = {
+    navLabel: 'Bills',
+    render: function (root) {
+      root.dataset.activeView = 'bills';
+      var bills = App.store.get('bills', []);
+
+      root.innerHTML =
+        '<h1>Bills</h1>' +
+        '<p class="sub">Bills that come round however they really come round — not just monthly.</p>' +
+        '<div class="card">' +
+        '  <div class="field"><label for="billName">Bill name</label>' +
+        '    <input id="billName" type="text" placeholder="e.g. Rent"></div>' +
+        '  <div class="row">' +
+        '    <div class="field" style="flex:1"><label for="billAmount">Amount</label>' +
+        '      <input id="billAmount" type="number" step="0.01" placeholder="0.00"></div>' +
+        '    <div class="field" style="flex:1"><label for="billDue">Next due date</label>' +
+        '      <input id="billDue" type="date"></div>' +
+        '  </div>' +
+        '  <div class="field"><label for="billCadence">How often</label>' +
+        '    <select id="billCadence">' +
+        '      <option value="weekly">Every week</option>' +
+        '      <option value="biweekly">Every 2 weeks</option>' +
+        '      <option value="monthly" selected>Every month</option>' +
+        '      <option value="every_n_months">Every N months</option>' +
+        '      <option value="one_off">One-off</option>' +
+        '    </select></div>' +
+        '  <div class="row" id="everyNRow" hidden>' +
+        '    <div class="field" style="flex:1"><label for="billEveryN">Every how many months</label>' +
+        '      <input id="billEveryN" type="number" min="2" max="12" value="6"></div>' +
+        '    <div class="field" style="flex:1;display:flex;align-items:flex-end;gap:6px;padding-bottom:10px">' +
+        '      <input id="billSetAside" type="checkbox"><label for="billSetAside" style="margin:0">Set a bit aside each month</label></div>' +
+        '  </div>' +
+        '  <button id="addBillBtn" type="button">Add bill</button>' +
+        '</div>' +
+        '<div class="card"><h2>Your bills</h2><ul id="billList"></ul></div>';
+
+      var cadenceSel = root.querySelector('#billCadence');
+      var everyNRow = root.querySelector('#everyNRow');
+      cadenceSel.addEventListener('change', function () {
+        everyNRow.hidden = cadenceSel.value !== 'every_n_months';
+      });
+
+      renderList();
+
+      function renderList() {
+        var ul = root.querySelector('#billList');
+        if (!bills.length) {
+          ul.innerHTML = '';
+          var empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.innerHTML = '<strong>No bills yet</strong>Add your first one above.';
+          ul.replaceWith(empty);
+          empty.id = 'billList';
+          return;
+        }
+        ul.innerHTML = '';
+        bills.slice().sort(function (a, b) { return a.dueDate < b.dueDate ? -1 : 1; })
+          .forEach(function (bill) {
+            var li = document.createElement('li');
+            li.innerHTML = '<span>' + d.escapeHtml(bill.name) + ' &middot; ' +
+              d.formatMoney(d.effectiveAmount(bill)) + ' &middot; ' + cadenceLabel(bill) +
+              ' &middot; due ' + bill.dueDate + (bill.paid ? ' &middot; <strong>paid</strong>' : '') + '</span>';
+            var actions = document.createElement('span');
+            if (!bill.paid) {
+              var payBtn = document.createElement('button');
+              payBtn.type = 'button';
+              payBtn.textContent = 'Mark paid';
+              payBtn.addEventListener('click', function () {
+                if (bill.cadence === 'one_off') {
+                  bill.paid = true;
+                } else {
+                  bill.dueDate = d.nextDueDate(bill);
+                  bill.paid = false;
+                }
+                App.store.set('bills', bills);
+                renderList();
+              });
+              actions.appendChild(payBtn);
+            }
+            var delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'ghost';
+            delBtn.textContent = 'Remove';
+            delBtn.addEventListener('click', function () {
+              bills.splice(bills.indexOf(bill), 1);
+              App.store.set('bills', bills);
+              renderList();
+            });
+            actions.appendChild(delBtn);
+            li.appendChild(actions);
+            ul.appendChild(li);
+          });
+      }
+
+      root.querySelector('#addBillBtn').addEventListener('click', function () {
+        if (window.APP_DEMO_MODE && bills.length >= DEMO_BILL_LIMIT) {
+          alert('The demo is limited to ' + DEMO_BILL_LIMIT + ' bills. The full version has no limit.');
+          return;
+        }
+        var name = root.querySelector('#billName').value.trim();
+        var amount = parseFloat(root.querySelector('#billAmount').value);
+        var dueDate = root.querySelector('#billDue').value;
+        var cadence = cadenceSel.value;
+        if (!name || !isFinite(amount) || !dueDate) return;
+        var bill = { id: d.uid(), name: name, amount: amount, cadence: cadence, dueDate: dueDate, paid: false };
+        if (cadence === 'every_n_months') {
+          bill.everyNMonths = parseInt(root.querySelector('#billEveryN').value, 10) || 6;
+          bill.setAside = root.querySelector('#billSetAside').checked;
+        }
+        bills.push(bill);
+        App.store.set('bills', bills);
+        root.querySelector('#billName').value = '';
+        root.querySelector('#billAmount').value = '';
+        root.querySelector('#billDue').value = '';
+        renderList();
+      });
+    },
+  };
+  App.nav.push('bills');
+})();
+
+
+/* Debt view — snowball (smallest balance first) or avalanche (highest rate first)
+ * payoff order, chosen by the buyer rather than fixed. */
+(function () {
+  window.App = window.App || { views: {}, nav: [] };
+  var d = App.data;
+
+  App.views.debt = {
+    navLabel: 'Debt',
+    render: function (root) {
+      root.dataset.activeView = 'debt';
+      var debts = App.store.get('debts', []);
+      var strategy = App.store.get('debtStrategy', 'snowball');
+      var ordered = d.debtPayoffOrder(debts, strategy);
+
+      root.innerHTML =
+        '<h1>Debt</h1>' +
+        '<p class="sub">A clear payoff order instead of guessing which one to tackle.</p>' +
+        '<div class="card">' +
+        '  <div class="row">' +
+        '    <input id="debtName" type="text" placeholder="e.g. Credit card" aria-label="Debt name">' +
+        '    <input id="debtBalance" type="number" step="0.01" placeholder="Balance" aria-label="Balance" style="max-width:120px">' +
+        '    <input id="debtRate" type="number" step="0.1" placeholder="Rate %" aria-label="Interest rate" style="max-width:90px">' +
+        '    <button id="addDebtBtn" type="button">Add</button>' +
+        '  </div>' +
+        '  <div class="field" style="margin-top:var(--space-3)"><label for="strategySel">Payoff strategy</label>' +
+        '    <select id="strategySel">' +
+        '      <option value="snowball"' + (strategy === 'snowball' ? ' selected' : '') + '>Snowball — smallest balance first</option>' +
+        '      <option value="avalanche"' + (strategy === 'avalanche' ? ' selected' : '') + '>Avalanche — highest interest rate first</option>' +
+        '    </select></div>' +
+        '</div>' +
+        '<div class="card"><h2>Payoff order</h2>' +
+        (ordered.length
+          ? '<div class="table-scroll"><table class="table"><thead><tr><th>#</th><th>Debt</th><th>Balance</th><th>Rate</th><th>Record payment</th><th></th></tr></thead><tbody id="debtBody"></tbody></table></div>'
+          : '<div class="empty-state"><strong>No debts added</strong>Add one above to see a payoff order.</div>') +
+        '</div>';
+
+      if (ordered.length) {
+        var tbody = root.querySelector('#debtBody');
+        ordered.forEach(function (debt, i) {
+          var tr = document.createElement('tr');
+          tr.innerHTML = '<td>' + (i + 1) + '</td><td>' + d.escapeHtml(debt.name) + '</td>' +
+            '<td>' + d.formatMoney(debt.balance) + '</td><td>' + (debt.rate || 0) + '%</td>';
+          var payTd = document.createElement('td');
+          var payInput = document.createElement('input');
+          payInput.type = 'number'; payInput.step = '0.01'; payInput.placeholder = 'Amount';
+          payInput.style.maxWidth = '100px';
+          payInput.setAttribute('aria-label', 'Payment amount for ' + debt.name);
+          var payBtn = document.createElement('button');
+          payBtn.type = 'button'; payBtn.textContent = 'Pay';
+          payBtn.addEventListener('click', function () {
+            var amt = parseFloat(payInput.value);
+            if (!isFinite(amt) || amt <= 0) return;
+            debt.balance = Math.max(0, debt.balance - amt);
+            var payments = App.store.get('debtPayments', []);
+            payments.push({ id: d.uid(), debtId: debt.id, amount: amt, date: new Date().toISOString().slice(0, 10) });
+            App.store.set('debtPayments', payments);
+            App.store.set('debts', debts);
+            App.views.debt.render(root);
+          });
+          payTd.appendChild(payInput);
+          payTd.appendChild(payBtn);
+          tr.appendChild(payTd);
+          var delTd = document.createElement('td');
+          var delBtn = document.createElement('button');
+          delBtn.type = 'button'; delBtn.className = 'ghost'; delBtn.textContent = 'Remove';
+          delBtn.addEventListener('click', function () {
+            debts.splice(debts.indexOf(debt), 1);
+            App.store.set('debts', debts);
+            App.views.debt.render(root);
+          });
+          delTd.appendChild(delBtn);
+          tr.appendChild(delTd);
+          tbody.appendChild(tr);
+        });
+      }
+
+      root.querySelector('#strategySel').addEventListener('change', function (e) {
+        App.store.set('debtStrategy', e.target.value);
+        App.views.debt.render(root);
+      });
+
+      root.querySelector('#addDebtBtn').addEventListener('click', function () {
+        var name = root.querySelector('#debtName').value.trim();
+        var balance = parseFloat(root.querySelector('#debtBalance').value);
+        var rate = parseFloat(root.querySelector('#debtRate').value);
+        if (!name || !isFinite(balance)) return;
+        debts.push({ id: d.uid(), name: name, balance: balance, rate: isFinite(rate) ? rate : 0 });
+        App.store.set('debts', debts);
+        App.views.debt.render(root);
+      });
+    },
+  };
+  App.nav.push('debt');
+})();
+
+
+/* Savings view — goals/envelopes with a target amount and progress. Money "saved"
+ * here is treated as reserved (see App.data.savingsReservedTotal) and subtracted
+ * from the dashboard's safe-to-spend number, so it's protected from everyday spend. */
+(function () {
+  window.App = window.App || { views: {}, nav: [] };
+  var d = App.data;
+
+  App.views.savings = {
+    navLabel: 'Savings',
+    render: function (root) {
+      root.dataset.activeView = 'savings';
+      var goals = App.store.get('savings', []);
+
+      root.innerHTML =
+        '<h1>Savings</h1>' +
+        '<p class="sub">Money set aside here is protected from today\'s safe-to-spend number.</p>' +
+        '<div class="card">' +
+        '  <div class="row">' +
+        '    <input id="goalName" type="text" placeholder="e.g. Emergency fund" aria-label="Goal name">' +
+        '    <input id="goalTarget" type="number" step="0.01" placeholder="Target" aria-label="Target amount" style="max-width:110px">' +
+        '    <button id="addGoalBtn" type="button">Add goal</button>' +
+        '  </div>' +
+        '</div>' +
+        '<div id="goalCards"></div>';
+
+      var container = root.querySelector('#goalCards');
+      if (!goals.length) {
+        container.innerHTML = '<div class="card empty-state"><strong>No savings goals yet</strong>Add one above.</div>';
+      } else {
+        goals.forEach(function (goal) {
+          var pct = goal.target > 0 ? Math.min(100, Math.round((goal.saved / goal.target) * 100)) : 0;
+          var card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML =
+            '<h2>' + d.escapeHtml(goal.name) + '</h2>' +
+            '<p class="sub">' + d.formatMoney(goal.saved) + ' of ' + d.formatMoney(goal.target) + ' &middot; ' + pct + '%</p>' +
+            '<div style="background:var(--color-border);border-radius:var(--radius-full);height:10px;overflow:hidden;margin-bottom:var(--space-3)">' +
+            '<div style="background:var(--color-primary);height:100%;width:' + pct + '%"></div></div>' +
+            '<div class="row">' +
+            '<input type="number" step="0.01" class="addToGoal" placeholder="Add amount" aria-label="Add to ' + d.escapeHtml(goal.name) + '" style="max-width:120px">' +
+            '<button type="button" class="addToGoalBtn">Add</button>' +
+            '<button type="button" class="ghost removeGoalBtn">Remove</button>' +
+            '</div>';
+          card.querySelector('.addToGoalBtn').addEventListener('click', function () {
+            var input = card.querySelector('.addToGoal');
+            var amt = parseFloat(input.value);
+            if (!isFinite(amt) || amt <= 0) return;
+            goal.saved = (goal.saved || 0) + amt;
+            App.store.set('savings', goals);
+            App.views.savings.render(root);
+          });
+          card.querySelector('.removeGoalBtn').addEventListener('click', function () {
+            goals.splice(goals.indexOf(goal), 1);
+            App.store.set('savings', goals);
+            App.views.savings.render(root);
+          });
+          container.appendChild(card);
+        });
+      }
+
+      root.querySelector('#addGoalBtn').addEventListener('click', function () {
+        var name = root.querySelector('#goalName').value.trim();
+        var target = parseFloat(root.querySelector('#goalTarget').value);
+        if (!name || !isFinite(target) || target <= 0) return;
+        goals.push({ id: d.uid(), name: name, target: target, saved: 0 });
+        App.store.set('savings', goals);
+        App.views.savings.render(root);
+      });
+    },
+  };
+  App.nav.push('savings');
+})();
+
+
+/* Wait List view — the approved differentiator (Opportunity Discovery: minority
+ * coverage, only TheSheetFlow has an equivalent among observed competitors).
+ * A 48-hour cooling-off period for an impulse buy: add an item with a price, watch
+ * a live countdown, and only once it elapses can it be converted to a real spend
+ * (reduces the account balance) or dismissed. The gate is the point — it's not
+ * just a visual nudge. */
+(function () {
+  window.App = window.App || { views: {}, nav: [] };
+  var d = App.data;
+  var WAIT_MS = 48 * 60 * 60 * 1000;
+  var timer = null;
+
+  function remaining(item) {
+    return Math.max(0, (new Date(item.addedAt).getTime() + WAIT_MS) - Date.now());
+  }
+  function formatRemaining(ms) {
+    var totalMin = Math.ceil(ms / 60000);
+    var h = Math.floor(totalMin / 60), m = totalMin % 60;
+    return h + 'h ' + m + 'm left';
+  }
+
+  App.views.waitlist = {
+    navLabel: 'Wait List',
+    render: function (root) {
+      root.dataset.activeView = 'waitlist';
+      if (timer) { clearInterval(timer); timer = null; }
+      var items = App.store.get('waitlist', []).filter(function (i) { return i.status === 'pending'; });
+
+      root.innerHTML =
+        '<h1>Wait List</h1>' +
+        '<p class="sub">See something you want? Park it here for 48 hours before you buy it.</p>' +
+        '<div class="card">' +
+        '  <div class="row">' +
+        '    <input id="waitName" type="text" placeholder="e.g. New headphones" aria-label="Item name">' +
+        '    <input id="waitPrice" type="number" step="0.01" placeholder="Price" aria-label="Item price" style="max-width:110px">' +
+        '    <button id="addWaitBtn" type="button">Add to wait list</button>' +
+        '  </div>' +
+        '</div>' +
+        '<div id="waitItems"></div>';
+
+      var container = root.querySelector('#waitItems');
+
+      function draw() {
+        if (!items.length) {
+          container.innerHTML = '<div class="card empty-state"><strong>Nothing waiting</strong>Add something above before you buy it.</div>';
+          return;
+        }
+        container.innerHTML = '';
+        items.forEach(function (item) {
+          var ms = remaining(item);
+          var ready = ms <= 0;
+          var card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML =
+            '<h2>' + d.escapeHtml(item.name) + '</h2>' +
+            '<p class="sub">' + d.formatMoney(item.price) + '</p>' +
+            '<div class="banner ' + (ready ? 'success' : 'info') + '">' +
+            (ready ? 'The wait is over — still want it?' : formatRemaining(ms)) +
+            '</div>' +
+            '<div class="row">' +
+            '<button type="button" class="buyBtn"' + (ready ? '' : ' disabled') + '>Buy it</button>' +
+            '<button type="button" class="ghost dismissBtn"' + (ready ? '' : ' disabled') + '>Dismiss</button>' +
+            '</div>';
+          card.querySelector('.buyBtn').addEventListener('click', function () {
+            if (remaining(item) > 0) return;
+            item.status = 'purchased';
+            App.store.set('waitlist', App.store.get('waitlist', []));
+            App.store.set('balance', App.store.get('balance', 0) - item.price);
+            App.views.waitlist.render(root);
+          });
+          card.querySelector('.dismissBtn').addEventListener('click', function () {
+            if (remaining(item) > 0) return;
+            item.status = 'dismissed';
+            App.store.set('waitlist', App.store.get('waitlist', []));
+            App.views.waitlist.render(root);
+          });
+          container.appendChild(card);
+        });
+      }
+      draw();
+      timer = setInterval(draw, 60000);
+
+      root.querySelector('#addWaitBtn').addEventListener('click', function () {
+        var name = root.querySelector('#waitName').value.trim();
+        var price = parseFloat(root.querySelector('#waitPrice').value);
+        if (!name || !isFinite(price) || price <= 0) return;
+        var all = App.store.get('waitlist', []);
+        all.push({ id: d.uid(), name: name, price: price, addedAt: new Date().toISOString(), status: 'pending' });
+        App.store.set('waitlist', all);
+        App.views.waitlist.render(root);
+      });
+    },
+  };
+  App.nav.push('waitlist');
+})();
+
+
+/* Settings view — currency (the one optional feature this product includes, cheap
+ * and common among competitors), a quick stats summary, and a reset-all-data danger
+ * zone. Theme toggle and backup export/import live in the header (#app-controls,
+ * see app_src/index.html + main.js) and apply globally, not duplicated here. */
+(function () {
+  window.App = window.App || { views: {}, nav: [] };
+  var d = App.data;
+
+  var CURRENCIES = [
+    { code: 'USD', symbol: '$' }, { code: 'EUR', symbol: '€' },
+    { code: 'GBP', symbol: '£' }, { code: 'CAD', symbol: 'CA$' },
+    { code: 'AUD', symbol: 'AU$' },
+  ];
+
+  App.views.settings = {
+    navLabel: 'Settings',
+    render: function (root) {
+      root.dataset.activeView = 'settings';
+      var currentSymbol = App.store.get('currencySymbol', '$');
+      var bills = App.store.get('bills', []);
+      var debts = App.store.get('debts', []);
+      var savings = App.store.get('savings', []);
+      var waitlistPending = App.store.get('waitlist', []).filter(function (i) { return i.status === 'pending'; }).length;
+
+      var options = CURRENCIES.map(function (c) {
+        return '<option value="' + c.symbol + '"' + (c.symbol === currentSymbol ? ' selected' : '') + '>' +
+          c.code + ' (' + c.symbol + ')</option>';
+      }).join('');
+
+      root.innerHTML =
+        '<h1>Settings</h1>' +
+        '<p class="sub">Your currency, a quick summary, and ways to reset your data.</p>' +
+        '<div class="card">' +
+        '  <div class="field"><label for="currencySel">Currency</label>' +
+        '    <select id="currencySel">' + options + '</select></div>' +
+        '</div>' +
+        '<div class="card"><h2>Summary</h2>' +
+        '  <div class="table-scroll"><table class="table"><thead><tr><th>Stat</th><th>Value</th></tr></thead><tbody>' +
+        '    <tr><td>Bills tracked</td><td>' + bills.length + '</td></tr>' +
+        '    <tr><td>Debts tracked</td><td>' + debts.length + '</td></tr>' +
+        '    <tr><td>Savings goals</td><td>' + savings.length + '</td></tr>' +
+        '    <tr><td>Items on wait list</td><td>' + waitlistPending + '</td></tr>' +
+        '  </tbody></table></div>' +
+        '</div>' +
+        '<div class="card">' +
+        '  <div class="banner warning">Resetting erases everything stored in this browser. Export a backup first if you want to keep it.</div>' +
+        '  <button id="resetBtn" class="danger" type="button">Reset all data</button>' +
+        '</div>' +
+        '<dialog class="modal" id="resetDialog">' +
+        '  <div class="modal-header">Reset all data?</div>' +
+        '  <div class="modal-body">This erases every bill, debt, savings goal, and wait-list item stored in this browser. There is no undo.</div>' +
+        '  <div class="modal-footer">' +
+        '    <button id="cancelResetBtn" class="ghost" type="button">Cancel</button>' +
+        '    <button id="confirmResetBtn" class="danger" type="button">Reset</button>' +
+        '  </div>' +
+        '</dialog>';
+
+      root.querySelector('#currencySel').addEventListener('change', function (e) {
+        App.store.set('currencySymbol', e.target.value);
+        App.views.settings.render(root);
+      });
+
+      var dialog = root.querySelector('#resetDialog');
+      root.querySelector('#resetBtn').addEventListener('click', function () { dialog.showModal(); });
+      root.querySelector('#cancelResetBtn').addEventListener('click', function () { dialog.close(); });
+      root.querySelector('#confirmResetBtn').addEventListener('click', function () {
+        try { localStorage.clear(); } catch (e) {}
+        dialog.close();
+        location.reload();
+      });
+    },
+  };
+  App.nav.push('settings');
+})();
+
+
+/* Orchestration: shared store (single localStorage blob, same backup-friendly pattern as
+ * tools/app_template.html), theme toggle, export/import, demo-mode banner, router init.
+ * Runs last, after every view module in app_src/modules/ has registered itself. */
+(function () {
+  var KEY = 'app-state-v1';
+
+  function load() {
+    try {
+      var s = JSON.parse(localStorage.getItem(KEY));
+      return s && typeof s === 'object' ? s : {};
+    } catch (e) { return {}; }
+  }
+  function save(state) {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  var state = load();
+  window.App = window.App || { views: {}, nav: [] };
+  App.store = {
+    get: function (key, fallback) { return key in state ? state[key] : fallback; },
+    set: function (key, value) { state[key] = value; save(state); },
+    all: function () { return state; },
+  };
+
+  /* Shared UI helpers any view's render(root) can call after building its markup.
+   * initTabs wires up the role="tablist"/"tab"/"tabpanel" convention (see
+   * styles/01_components.css's .tabs): click a tab, show its panel, hide the
+   * others. Pure DOM wiring — presentation lives entirely in CSS. */
+  App.ui = {
+    initTabs: function (root) {
+      var tabs = root.querySelectorAll('[role="tab"]');
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          var panelId = tab.getAttribute('aria-controls');
+          tabs.forEach(function (t) { t.setAttribute('aria-selected', 'false'); });
+          root.querySelectorAll('[role="tabpanel"]').forEach(function (p) { p.hidden = true; });
+          tab.setAttribute('aria-selected', 'true');
+          var panel = document.getElementById(panelId);
+          if (panel) panel.hidden = false;
+        });
+      });
+    },
+  };
+
+  function applyTheme() {
+    var theme = App.store.get('theme', 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+  applyTheme();
+  document.getElementById('themeToggle').addEventListener('click', function () {
+    App.store.set('theme', App.store.get('theme', 'light') === 'dark' ? 'light' : 'dark');
+    applyTheme();
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'backup.json';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+  document.getElementById('importBtn').addEventListener('click', function () {
+    document.getElementById('importFile').click();
+  });
+  document.getElementById('importFile').addEventListener('change', function (e) {
+    var f = e.target.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var s = JSON.parse(r.result);
+        if (s && typeof s === 'object') {
+          state = s;
+          save(state);
+          applyTheme();
+          AppRouter.init();
+        } else {
+          alert('This file is not a valid backup.');
+        }
+      } catch (err) {
+        alert('This file is not a valid backup.');
+      }
+    };
+    r.readAsText(f);
+  });
+
+  if (window.APP_DEMO_MODE) {
+    document.getElementById('demo-banner').hidden = false;
+  }
+
+  AppRouter.init();
+})();
+
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function () {});
+}
+</script>
+</body>
+</html>
