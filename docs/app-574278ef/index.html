@@ -690,6 +690,11 @@ details.disclosure[open] > summary svg { transform: rotate(90deg); }
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas: "summary" "form" "list";
 }
+/* Phones: once there's something in the list, it leads (that's what a returning
+   user came to see); while it's empty, the add form leads (setup). */
+@media (max-width: 1099px) {
+  .page-grid.has-items { grid-template-areas: "summary" "list" "form"; }
+}
 .g-summary { grid-area: summary; }
 .g-form { grid-area: form; }
 .g-list { grid-area: list; min-width: 0; }
@@ -752,7 +757,7 @@ details.disclosure[open] > summary svg { transform: rotate(90deg); }
 .debt-rank svg { width: 16px; height: 16px; }
 .is-focus .debt-rank { background: var(--color-primary); color: var(--color-on-primary); }
 .is-done .debt-rank { background: var(--color-success-bg); color: var(--color-success); }
-.focus-label { display: flex; align-items: center; gap: 4px; font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--color-primary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+.focus-label { grid-column: 1 / -1; display: flex; align-items: center; gap: 4px; font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--color-primary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: var(--space-2); }
 :root[data-theme="dark"] .focus-label { color: var(--color-accent); }
 .focus-label svg { width: 14px; height: 14px; }
 .debt-link { grid-column: 2 / -1; margin-top: var(--space-2); }
@@ -2847,7 +2852,7 @@ window.APP_DEMO_MODE = false;
           group('Paid', paid, today, r.payday.date));
       }
 
-      root.appendChild(h('div', { class: 'page-grid' },
+      root.appendChild(h('div', { class: 'page-grid' + ((bills.length) ? ' has-items' : '') },
         h('div', { class: 'stats g-summary' },
           stat('Bills', String(bills.length) + (limit != null ? ' of ' + limit : '')),
           stat('About per month', ui.fmt(monthly)),
@@ -2941,10 +2946,10 @@ window.APP_DEMO_MODE = false;
     }
     var focus = index === 0 && !done;
     return h('li', { class: 'debt-row' + (focus ? ' is-focus' : '') + (done ? ' is-done' : '') },
+      focus ? h('div', { class: 'focus-label' }, ui.icon('flag'), 'Pay this first') : null,
       h('span', { class: 'debt-rank', attrs: { 'aria-label': done ? 'Paid off' : 'Pay off ' + ordinal(index + 1) } },
         done ? ui.icon('check') : String(index + 1)),
       h('div', { class: 'list-main' },
-        focus ? h('div', { class: 'focus-label' }, ui.icon('flag'), 'Pay this first') : null,
         h('div', { class: 'list-title', text: d.name }),
         h('div', { class: 'list-meta' }, done ? h('span', { class: 'pill pill-success', text: 'Paid off' }) : meta)),
       h('div', { class: 'list-amount debt-balance', text: ui.fmt(d.balanceCents) }),
@@ -2986,7 +2991,7 @@ window.APP_DEMO_MODE = false;
         : h('section', { class: 'card' }, ui.emptyState('debt', 'No debts added',
           'If you have none — brilliant. Otherwise add cards, loans or buy-now-pay-later plans and get a clear order to tackle them in.'));
 
-      root.appendChild(h('div', { class: 'page-grid' },
+      root.appendChild(h('div', { class: 'page-grid' + ((order.length) ? ' has-items' : '') },
         h('div', { class: 'stats g-summary' },
           ui.stat('Total owed', ui.fmt(totals.balanceCents)),
           ui.stat('Minimums / month', ui.fmt(totals.minPaymentCents)),
@@ -3115,7 +3120,7 @@ window.APP_DEMO_MODE = false;
         : h('section', { class: 'card' }, ui.emptyState('savings', 'Nothing saved here yet',
           'Create a goal for something you’re saving toward, or an envelope for money you’ve earmarked.'));
 
-      root.appendChild(h('div', { class: 'page-grid' },
+      root.appendChild(h('div', { class: 'page-grid' + ((s.goals.length) ? ' has-items' : '') },
         h('div', { class: 'stats g-summary' },
           ui.stat('Held back', ui.fmt(held)),
           ui.stat('Goals', String(goals.length)),
@@ -3233,7 +3238,7 @@ window.APP_DEMO_MODE = false;
         ? h('ul', { class: 'wait-grid' }, waiting.map(function (i) { return waitingCard(i, now, r.safeCents); }))
         : h('section', { class: 'card' }, ui.emptyState('waitlist', 'Nothing waiting', 'Next time you’re about to buy something you didn’t plan for, add it here first.'));
 
-      root.appendChild(h('div', { class: 'page-grid' },
+      root.appendChild(h('div', { class: 'page-grid' + ((waiting.length || decided.length) ? ' has-items' : '') },
         h('div', { class: 'stats g-summary' },
           ui.stat('Waiting', String(waiting.length)),
           ui.stat('Kept by skipping', ui.fmt(stats.keptCents)),

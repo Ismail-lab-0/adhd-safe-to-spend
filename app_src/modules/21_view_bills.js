@@ -151,7 +151,7 @@
           group('Paid', paid, today, r.payday.date));
       }
 
-      root.appendChild(h('div', { class: 'page-grid' },
+      root.appendChild(h('div', { class: 'page-grid' + ((bills.length) ? ' has-items' : '') },
         h('div', { class: 'stats g-summary' },
           stat('Bills', String(bills.length) + (limit != null ? ' of ' + limit : '')),
           stat('About per month', ui.fmt(monthly)),

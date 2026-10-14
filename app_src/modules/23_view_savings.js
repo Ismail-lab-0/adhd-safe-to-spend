@@ -113,7 +113,7 @@
         : h('section', { class: 'card' }, ui.emptyState('savings', 'Nothing saved here yet',
           'Create a goal for something you’re saving toward, or an envelope for money you’ve earmarked.'));
 
-      root.appendChild(h('div', { class: 'page-grid' },
+      root.appendChild(h('div', { class: 'page-grid' + ((s.goals.length) ? ' has-items' : '') },
         h('div', { class: 'stats g-summary' },
           ui.stat('Held back', ui.fmt(held)),
           ui.stat('Goals', String(goals.length)),

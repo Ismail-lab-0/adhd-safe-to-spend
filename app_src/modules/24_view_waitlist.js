@@ -102,7 +102,7 @@
         ? h('ul', { class: 'wait-grid' }, waiting.map(function (i) { return waitingCard(i, now, r.safeCents); }))
         : h('section', { class: 'card' }, ui.emptyState('waitlist', 'Nothing waiting', 'Next time you’re about to buy something you didn’t plan for, add it here first.'));
 
-      root.appendChild(h('div', { class: 'page-grid' },
+      root.appendChild(h('div', { class: 'page-grid' + ((waiting.length || decided.length) ? ' has-items' : '') },
         h('div', { class: 'stats g-summary' },
           ui.stat('Waiting', String(waiting.length)),
           ui.stat('Kept by skipping', ui.fmt(stats.keptCents)),

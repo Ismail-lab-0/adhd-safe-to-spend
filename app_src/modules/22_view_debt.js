@@ -73,10 +73,10 @@
     }
     var focus = index === 0 && !done;
     return h('li', { class: 'debt-row' + (focus ? ' is-focus' : '') + (done ? ' is-done' : '') },
+      focus ? h('div', { class: 'focus-label' }, ui.icon('flag'), 'Pay this first') : null,
       h('span', { class: 'debt-rank', attrs: { 'aria-label': done ? 'Paid off' : 'Pay off ' + ordinal(index + 1) } },
         done ? ui.icon('check') : String(index + 1)),
       h('div', { class: 'list-main' },
-        focus ? h('div', { class: 'focus-label' }, ui.icon('flag'), 'Pay this first') : null,
         h('div', { class: 'list-title', text: d.name }),
         h('div', { class: 'list-meta' }, done ? h('span', { class: 'pill pill-success', text: 'Paid off' }) : meta)),
       h('div', { class: 'list-amount debt-balance', text: ui.fmt(d.balanceCents) }),
@@ -118,7 +118,7 @@
         : h('section', { class: 'card' }, ui.emptyState('debt', 'No debts added',
           'If you have none — brilliant. Otherwise add cards, loans or buy-now-pay-later plans and get a clear order to tackle them in.'));
 
-      root.appendChild(h('div', { class: 'page-grid' },
+      root.appendChild(h('div', { class: 'page-grid' + ((order.length) ? ' has-items' : '') },
         h('div', { class: 'stats g-summary' },
           ui.stat('Total owed', ui.fmt(totals.balanceCents)),
           ui.stat('Minimums / month', ui.fmt(totals.minPaymentCents)),
