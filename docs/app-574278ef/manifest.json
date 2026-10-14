@@ -1,10 +1,10 @@
 {
-  "name": "ADHD Budget Planner",
-  "short_name": "ADHD Budget ",
+  "name": "Safe to Spend",
+  "short_name": "Safe to Spend",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#FBF6F1",
-  "theme_color": "#A8512E",
+  "theme_color": "#A34B2A",
   "icons": [
     {
       "src": "icon-192.png",

@@ -1,0 +1,141 @@
+/* Design tokens — the single source of truth for color, type, space, radius,
+   elevation and motion. Components reference tokens only; no raw hex values
+   outside this file. Rationale and usage rules: docs/DESIGN.md.
+
+   Palette: warm terracotta + plum on warm paper, deliberately away from the
+   teal/green "calm fintech" look most competitors use (spec.md → Design).
+   Contrast pairs required by validators/app_check.py are verified ≥ 4.5:1 in
+   both themes; tests/unit/design.test.js re-checks every text pair below. */
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --color-bg: #FBF6F1;
+  --color-card: #FFFFFF;
+  --color-sunken: #F4ECE3;
+  --color-border: #E8DCCF;
+  --color-border-strong: #D5C4B3;
+
+  /* Text */
+  --color-ink: #2D2729;
+  --color-muted: #6E6259;
+  --color-faint: #8F8278;
+
+  /* Brand */
+  --color-accent: #D9714E;          /* decorative: icons, bars, highlights */
+  --color-accent-soft: #FBE7DD;
+  --color-plum: #7E4F70;
+  --color-plum-soft: #F1E4EC;
+
+  /* Solid fills carrying white text — FIXED across themes (see docs/DESIGN.md) */
+  --color-primary: #A34B2A;
+  --color-primary-hover: #8C3F22;
+  --color-on-primary: #FFFFFF;
+  --color-danger-strong: #A8353F;
+  --color-on-danger: #FFFFFF;
+
+  /* Semantic */
+  --color-danger: #A8353F;
+  --color-error-bg: #F9E4E5;
+  --color-success: #2C6A4B;
+  --color-success-bg: #E2F0E7;
+  --color-warning: #85570A;
+  --color-warning-bg: #FBF0D8;
+  --color-info: #2C5B85;
+  --color-info-bg: #E4EDF5;
+
+  /* Breakdown categories (always paired with a text label, never color alone) */
+  --color-cat-bills: #D9714E;
+  --color-cat-setaside: #C99A3E;
+  --color-cat-savings: #8A5C7A;
+  --color-cat-safe: #2F7A55;
+
+  /* Overlays */
+  --color-toast-bg: #2D2729;
+  --color-toast-ink: #FBF6F1;
+  --color-toast-action: #F4B79E;
+  --color-scrim: rgba(30, 20, 25, .45);
+
+  /* Space (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Radius */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(60, 40, 30, .06), 0 1px 1px rgba(60, 40, 30, .04);
+  --shadow-md: 0 6px 20px rgba(60, 40, 30, .10);
+  --shadow-lg: 0 18px 48px rgba(40, 25, 20, .22);
+
+  /* Type */
+  --font-body: "Nunito Sans", ui-rounded, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: "Quicksand", ui-rounded, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-hero: clamp(2.75rem, 11vw, 4rem);
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --weight-regular: 400;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Layout */
+  --tap: 44px;
+  --content-max: 1120px;
+  --sidebar-w: 236px;
+  --tabbar-h: 64px;
+
+  /* Motion */
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+}
+
+/* Dark theme: explicit choice, or "system" (no data-theme) on a dark OS. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #1D161C;
+  --color-card: #281F27;
+  --color-sunken: #221A21;
+  --color-border: #3E313B;
+  --color-border-strong: #54434F;
+  --color-ink: #F2ECE6;
+  --color-muted: #BDAFB7;
+  --color-faint: #9C8E97;
+  --color-accent: #E8906F;
+  --color-accent-soft: #3D2620;
+  --color-plum: #D3A3C4;
+  --color-plum-soft: #3A2734;
+  --color-danger: #F0959B;
+  --color-error-bg: #3D2023;
+  --color-success: #8ED0AA;
+  --color-success-bg: #1C3529;
+  --color-warning: #EBC56E;
+  --color-warning-bg: #3A2F14;
+  --color-info: #93C0E8;
+  --color-info-bg: #1C3044;
+  --color-cat-bills: #E8906F;
+  --color-cat-setaside: #D9B15F;
+  --color-cat-savings: #C08BB2;
+  --color-cat-safe: #63B98B;
+  --color-toast-bg: #F2ECE6;
+  --color-toast-ink: #2D2729;
+  --color-toast-action: #A34B2A;
+  --color-scrim: rgba(0, 0, 0, .6);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, .35);
+  --shadow-lg: 0 18px 48px rgba(0, 0, 0, .55);
+}

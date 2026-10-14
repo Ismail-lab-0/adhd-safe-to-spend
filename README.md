@@ -8,13 +8,14 @@ A calm, browser-based budget planner for ADHD and other neurodivergent brains. O
 
 ## Features
 
-- Safe-to-spend-today number, recomputed from your balance, unpaid bills, and savings reservations
-- Bill tracker with weekly/biweekly/monthly/every-N-months/one-off cadences
-- Debt tracker with a chosen snowball or avalanche payoff order
-- Savings goals/envelopes with progress tracking
-- 48-hour impulse-purchase wait list — add something you want to buy, it only converts to a real spend once the cooling-off period ends
-- Works offline once installed to your Home Screen; no account, no bank connection, no subscription
-- Manual backup/restore via file export-import
+- **Safe to spend until payday**: balance − unpaid bills due before your next payday (including overdue and repeating ones) − money set aside for bigger bills − savings, with a plain "how we got this number" breakdown and an approximate daily amount
+- **Bills** on their real schedule: weekly, every 2 weeks, monthly, every N months (with gradual set-aside), or one time; one-tap paid toggle
+- **Debt** payoff order (snowball or avalanche) with a clear "pay this first", and minimum payments that can count in your number
+- **Savings goals and envelopes** that protect money from being spent
+- **48-hour Wait List** for impulse buys: "Buy it" unlocks only after the wait, and money kept by skipping is counted
+- Quick spend/income log, undo on every destructive action, light/dark/auto theme, 15 display currencies
+- Works offline once opened (installable to your Home Screen); no account, no bank connection, no subscription, no analytics
+- Backup to a file and restore it on any device or browser
 
 ## Setup
 
@@ -26,6 +27,14 @@ GitHub Pages does automatically for this repo).
 
 - Data is stored locally in the browser only — export a backup periodically, especially before switching devices.
 - No cross-device sync — this was considered and intentionally rejected (no backend infrastructure in this project's static-hosting deploy model); use export/import to move data between devices.
+
+## Development
+
+`app_src/` is plain HTML/CSS/JS (no framework, no npm packages), concatenated in
+filename order by `tools/app_bundle.js`. Pure logic lives in
+`app_src/modules/0*_*.js`; `node --test tests/unit/*.test.js` runs its tests.
+Product, architecture, data-model, design and test documentation is in
+`project-docs/`.
 
 ## Deployment
 
