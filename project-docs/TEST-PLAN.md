@@ -13,7 +13,7 @@ builds → end-to-end).
 | Visual | `python3 tests/e2e/shots.py deploy/index.html <out> --widths=390,768,1440 --themes=light,dark --views=dashboard,bills,debt,savings,waitlist,settings --states=empty,sample` | screenshots for human review against `../../docs/ui_visual_review_checklist.md` |
 
 ## Manual checks before each release
-- Real iPhone Safari: Add to Home Screen, open offline, date pickers, bottom
+- A real phone in Safari: Add to Home Screen, open offline, date pickers, bottom
   sheet dialogs, safe-area padding.
 - Export on mobile saves a file the user can find again.
 - Screen reader spot check (VoiceOver): nav labels and badges, hero number
